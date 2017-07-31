@@ -12,7 +12,7 @@
 RootModule = 'ImpliedReflection.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.1.0'
+ModuleVersion = '0.1.1'
 
 # ID used to uniquely identify this module
 GUID = '8834a5bf-9bf2-4f09-8415-3c1e561109f6'
@@ -80,7 +80,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        # ReleaseNotes = ''
+        ReleaseNotes = '- Fixed the module not loading.'
 
     } # End of PSData hashtable
 
