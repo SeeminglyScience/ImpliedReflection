@@ -1,7 +1,7 @@
 Import-LocalizedData -BindingVariable Strings -FileName Strings -ErrorAction Ignore
 
 # Include all function files.
-Get-ChildItem $PSScriptRoot\Public\*.ps1, $PSScriptRoot\Private\*.ps1 | ForEach-Object {
+Get-ChildItem $PSScriptRoot\Public\*.ps1 | ForEach-Object {
     . $PSItem.FullName
 }
 
