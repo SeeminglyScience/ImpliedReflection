@@ -37,10 +37,15 @@ Describe 'Add-PrivateMember operation' {
             $ExecutionContext._context._formatDBManager | Should Be $null
         }
         It 'can chain with return property parameter' {
+            # More examples of why not to use reflection.
+            $moduleTable = '_moduleTable'
+            if ($PSVersionTable.PSVersion.Major -ge 6) {
+                $moduleTable = 'ModuleTable'
+            }
             $ExecutionContext |
                 Add-PrivateMember _context |
                 Add-PrivateMember Modules |
-                Add-PrivateMember _moduleTable |
+                Add-PrivateMember $moduleTable |
                 Should BeOfType 'System.Collections.Generic.Dictionary[string,psmoduleinfo]'
         }
         It 'returns the object with PassThru' {
@@ -57,13 +62,22 @@ Describe 'Add-PrivateMember operation' {
             [scriptblock]::EmptyScriptBlock | Should BeOfType scriptblock
         }
         It 'can access fields' {
-            [scriptblock]::_cachedScripts.GetType().Name | Should Be 'ConcurrentDictionary`2'
+            if ($PSVersionTable.PSVersion.Major -ge 6) {
+                [scriptblock]::s_cachedScripts.GetType().Name | Should Be 'ConcurrentDictionary`2'
+            } else {
+                [scriptblock]::_cachedScripts.GetType().Name | Should Be 'ConcurrentDictionary`2'
+            }
         }
         It 'can access methods' {
             [scriptblock]::TokenizeWordElements('one two three') | Should Be 'one','two','three'
         }
         It 'added methods are the correct type' {
-            [scriptblock]::BindArgumentsForScripblockInvoke |
+            # Always wondered if this misspelling was for some reason on purpose.
+            $methodName = 'BindArgumentsForScripBlockInvoke'
+            if ($PSVersionTable.PSVersion.Major -ge 6) {
+                $methodName = 'BindArgumentsForScriptBlockInvoke'
+            }
+            [scriptblock]::$methodName |
                 Should BeOfType 'System.Management.Automation.PSMethod'
         }
     }

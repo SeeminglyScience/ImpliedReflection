@@ -36,19 +36,19 @@ function Add-PrivateMember {
         function NewPropertyCacheEntry([MemberInfo] $property) {
             $cacheEntry = [ref].Assembly.
                 GetType('System.Management.Automation.DotNetAdapter+PropertyCacheEntry').
-                GetConstructor(60, $null, @($property.GetType()), 1).
+                GetConstructor($FLAG_MAP.Instance, $null, @($property.GetType()), 1).
                 Invoke($property)
 
             # The cache entry uses these fields to determine if the properties for the
             # Getter/Setter delegates should create the delegate. They are set to false during
             # construction if the method isn't public.
-            $cacheEntry.GetType().GetField('writeOnly', 60).SetValue($cacheEntry, $false)
+            $cacheEntry.GetType().GetField($script:FIELD_REFERENCE.writeOnly, 60).SetValue($cacheEntry, $false)
             $isWritable = $property.SetMethod -or
                          ('Field' -eq $property.MemberType -and
                           -not $property.IsInitOnly)
 
             if ($isWritable) {
-                $cacheEntry.GetType().GetField('readOnly', 60).SetValue($cacheEntry, $false)
+                $cacheEntry.GetType().GetField($script:FIELD_REFERENCE.readOnly, 60).SetValue($cacheEntry, $false)
             }
             return $cacheEntry
         }
@@ -128,7 +128,7 @@ function Add-PrivateMember {
                     Type     = $target.psobject.BaseObject
                     Flags    = $FLAG_MAP.Static
                     Adapter  = [psobject].
-                        GetField('dotNetStaticAdapter', $FLAG_MAP.Static).
+                        GetField($script:FIELD_REFERENCE.dotNetStaticAdapter, $FLAG_MAP.Static).
                         GetValue($null)
                 }
             }
@@ -137,7 +137,7 @@ function Add-PrivateMember {
                 Type     = $target.GetType()
                 Flags    = $FLAG_MAP.Instance
                 Adapter  = [PSMethod].
-                    GetField('adapter', $FLAG_MAP.Instance).
+                    GetField($script:FIELD_REFERENCE.adapter, $FLAG_MAP.Instance).
                     GetValue($target.psobject.Methods.Item('GetType'))
             }
         }
@@ -173,7 +173,7 @@ function Add-PrivateMember {
 
                     $alreadyExists = $table.
                         GetType().
-                        GetField('indexes', $FLAG_MAP.Instance).
+                        GetField($script:FIELD_REFERENCE.indexes, $FLAG_MAP.Instance).
                         GetValue($table).
                         ContainsKey($memberName)
 

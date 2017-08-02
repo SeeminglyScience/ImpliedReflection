@@ -1,4 +1,4 @@
-#requires -Module InvokeBuild, PSScriptAnalyzer, Pester, PlatyPS -Version 5.1
+#requires -Module @{ModuleName = 'Pester'; RequiredVersion = '3.4.3'}, InvokeBuild, PSScriptAnalyzer, PlatyPS -Version 5.1
 [CmdletBinding()]
 param()
 
@@ -58,7 +58,8 @@ task Test -If { $script:Discovery.HasTests -and $script:Settings.ShouldTest } {
     $pesterCC    = "$PSScriptRoot\module\*\*.ps1", "$PSScriptRoot\module\*.psm1"
     Start-Job {
         Set-Location $using:projectRoot
-        Invoke-Pester -PesterOption @{ IncludeVSCodeMarker = $true } -CodeCoverage $using:pesterCC
+
+        Invoke-Pester -CodeCoverage $using:pesterCC -PesterOption @{ IncludeVSCodeMarker = $true }
     } | Receive-Job -Wait -AutoRemoveJob
 }
 
