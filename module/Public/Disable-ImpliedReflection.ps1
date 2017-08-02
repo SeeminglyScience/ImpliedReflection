@@ -16,11 +16,15 @@ function Disable-ImpliedReflection {
                     [ErrorCategory]::InvalidOperation,
                     $null))
         }
+        $fieldPrefix = ''
+        if ($PSVersionTable.PSVersion.Major -ge 6) {
+            $fieldPrefix = 's_'
+        }
         foreach ($visibilityScope in 'static', 'instance') {
             foreach ($memberType in 'Property', 'Method') {
                 [ref].Assembly.
                     GetType('System.Management.Automation.DotNetAdapter').
-                    GetField("${visibilityScope}${memberType}CacheTable", [BindingFlags]'Static, NonPublic').
+                    GetField("${fieldPrefix}${visibilityScope}${memberType}CacheTable", [BindingFlags]'Static, NonPublic').
                     GetValue($null).
                     Clear()
             }

@@ -12,7 +12,7 @@
 RootModule = 'ImpliedReflection.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.1.1'
+ModuleVersion = '0.1.2'
 
 # ID used to uniquely identify this module
 GUID = '8834a5bf-9bf2-4f09-8415-3c1e561109f6'
@@ -80,7 +80,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = '- Fixed the module not loading.'
+        ReleaseNotes = '- Added support for PowerShell 6.0 beta 4.'
 
     } # End of PSData hashtable
 
