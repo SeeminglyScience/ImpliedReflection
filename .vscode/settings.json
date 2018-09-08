@@ -8,7 +8,9 @@
     "files.insertFinalNewline": true,
 
     "search.exclude": {
-        "Release": true
+        "Release": true,
+        "tools/ResGen": true,
+        "tools/dotnet": true,
     },
 
     //-------- PowerShell Configuration --------

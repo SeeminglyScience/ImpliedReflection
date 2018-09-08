@@ -96,7 +96,7 @@ If either the ReturnPropertyName parameter or the PassThru switch parameter is s
 ## NOTES
 
 - If the InputObject is a type info object (System.Type) then static members of the value will be added instead.
-- Currently this does not work with Constructors
+- Non-public constructors will be added as a static method named "ctor".
 - Properties or fields with the same name of an existing property will not be added.
 - Non-public method overloads of a public method will not be loaded.
 - Overloads of a method that is not already present will be grouped into a single PSMethod object,
