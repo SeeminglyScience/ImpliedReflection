@@ -9,16 +9,31 @@ By participating, you are expected to uphold this code. Please report unacceptab
 
 - All members are bound to the object the **same way public members are** by the PowerShell engine.
 - Supports any parameter types (including ByRef, Pointer, etc) that the PowerShell engine can handle.
-- Members are **bound automatically** when output to the console.
-- Supports non-public static members with `[type]::Member` syntax.
+- Member binding is done automatically by hooking into the PowerShell engine's binder.
+
+## Known Issues
+
+- Non-public static members will only be available once either:
+    1. A `System.Type` object representing the type has been outputted
+    1. An instance of the type has been outputted
+  There's only an instance delegate in the engine, so static still depends on `Out-Default`
+
+- Non-public constructors are available via an added `_ctor` static method
+
+- Family (aka `protected`) properties will throw an exception stating that the property is
+  write only.  This is due to explicit checks for family properties in the PowerShell's binder. You can
+  get around it by calling the getter method instead (e.g. instead of `$Host.Runspace.RunningPipelines` try `$Host.Runpsace.get_RunningPipelines()`)
 
 ## Documentation
 
 Check out our **[documentation](https://github.com/SeeminglyScience/ImpliedReflection/tree/master/docs/en-US/ImpliedReflection.md)** for information about how to use this project.
 
-## Demo
+## Demos
+
+![new-member-binding](https://user-images.githubusercontent.com/24977523/45323875-79ada380-b51a-11e8-95d0-15e605b5eb4a.gif)
 
 ![implied-reflection-demo](https://user-images.githubusercontent.com/24977523/28750154-28fda216-74af-11e7-8629-8ada279e860e.gif)
+
 
 ## Installation
 
@@ -42,10 +57,6 @@ Invoke-Build -Task Install
 
 ```powershell
 Enable-ImpliedReflection -Force
-$ExecutionContext
-<# Output omitted #>
-$ExecutionContext._context
-<# Output omitted #>
 $ExecutionContext._context.HelpSystem
 <#
 ExecutionContext      : System.Management.Automation.ExecutionContext
@@ -77,10 +88,6 @@ _culture              :
 
 ```powershell
 $scriptblock = { 'Test ScriptBlock' }
-$scriptblock
-<# (Formatting still applies)
- 'Test ScriptBlock'
-#>
 $scriptblock.InvokeUsingCmdlet
 <#
 OverloadDefinitions
@@ -96,6 +103,8 @@ $scriptblock.InvokeUsingCmdlet($PSCmdlet, $true, 'SwallowErrors', $_, $input, $t
 ### Explore static members
 
 ```powershell
+# For static binding either the type (like below) or an instance of the type needs to hit
+# Out-Default first.
 [scriptblock]
 [scriptblock]::delegateTable
 <#
