@@ -9,10 +9,10 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'ImpliedReflection.psm1'
+RootModule = 'ImpliedReflection.dll'
 
 # Version number of this module.
-ModuleVersion = '0.1.2'
+ModuleVersion = '0.2.0'
 
 # ID used to uniquely identify this module
 GUID = '8834a5bf-9bf2-4f09-8415-3c1e561109f6'
@@ -33,7 +33,7 @@ Description = 'Explore private properties and methods as if they were public.'
 PowerShellVersion = '5.1'
 
 # Minimum version of Microsoft .NET Framework required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
-DotNetFrameworkVersion = '4.0'
+DotNetFrameworkVersion = '4.7.1'
 
 # Minimum version of the common language runtime (CLR) required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
 CLRVersion = '4.0'
@@ -42,12 +42,10 @@ CLRVersion = '4.0'
 ProcessorArchitecture = 'None'
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Add-PrivateMember',
-                    'Disable-ImpliedReflection',
-                    'Enable-ImpliedReflection'
+FunctionsToExport = @()
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = @()
+CmdletsToExport = 'Add-PrivateMember', 'Disable-ImpliedReflection', 'Enable-ImpliedReflection'
 
 # Variables to export from this module
 VariablesToExport = @()
@@ -57,10 +55,7 @@ AliasesToExport = @()
 
 # List of all files packaged with this module
 FileList = 'ImpliedReflection.psd1',
-           'ImpliedReflection.psm1',
-           'Public\Add-PrivateMember.ps1',
-           'Public\Disable-ImpliedReflection.ps1',
-           'Public\Enable-ImpliedReflection.ps1'
+           'ImpliedReflection.dll'
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 PrivateData = @{
@@ -80,7 +75,10 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = '- Added support for PowerShell 6.0 beta 4.'
+        ReleaseNotes = ' - Objects no longer need to be outputted before private members are available
+ - Enable invocation of private constructors via new "ctor" static proxy method
+ - Improve performance by using dynamically compiled delegates for reflection calls
+ - Full rewrite as binary module'
 
     } # End of PSData hashtable
 

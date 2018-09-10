@@ -1,11 +1,12 @@
-#requires -Module @{ModuleName = 'Pester'; RequiredVersion = '3.4.3'}, InvokeBuild, PSScriptAnalyzer, PlatyPS -Version 5.1
+#requires -Module InvokeBuild -Version 5.1
 [CmdletBinding()]
-param()
+param(
+    [ValidateSet('Debug', 'Release')]
+    [string] $Configuration = 'Debug'
+)
 
 $moduleName = 'ImpliedReflection'
-$manifest   = Test-ModuleManifest -Path          $PSScriptRoot\module\$moduleName.psd1 `
-                                  -ErrorAction   Ignore `
-                                  -WarningAction Ignore
+$manifest = Test-ModuleManifest -Path $PSScriptRoot\module\$moduleName.psd1 -ErrorAction Ignore -WarningAction Ignore
 
 $script:Settings = @{
     Name          = $moduleName
@@ -25,57 +26,79 @@ $script:Folders  = @{
 
 $script:Discovery = @{
     HasDocs       = Test-Path ('{0}\{1}\*.md' -f $Folders.Docs, $PSCulture)
-    HasTests      = Test-Path ('{0}\*.Tests.ps1' -f $Folders.Test)
+    HasTests      = Test-Path ('{0}\*.Test.ps1' -f $Folders.Test)
+    IsUnix        = $PSEdition -eq 'Core' -and -not $IsWindows
 }
 
 task Clean {
-    if (Test-Path $script:Folders.Release) {
-        Remove-Item $script:Folders.Release -Recurse
+    $releaseFolder = $Folders.Release
+    if (Test-Path $releaseFolder) {
+        Remove-Item $releaseFolder -Recurse
     }
-    $null = New-Item $script:Folders.Release -ItemType Directory
+
+    New-Item -ItemType Directory $releaseFolder | Out-Null
 }
 
-task BuildDocs -If { $script:Discovery.HasDocs } {
-    $null = New-ExternalHelp -Path       $PSScriptRoot\docs\$PSCulture `
-                             -OutputPath ('{0}\{1}' -f $script:Folders.Release, $PSCulture)
+task BuildDocs -If { $Discovery.HasDocs } {
+    $output = '{0}\{1}' -f $Folders.Release, $PSCulture
+    $null = New-ExternalHelp -Path $PSScriptRoot\docs\$PSCulture -OutputPath $output
 }
 
-task CopyToRelease  {
-    Copy-Item -Path ('{0}\*' -f $script:Folders.PowerShell) `
-              -Destination $script:Folders.Release `
-              -Recurse `
-              -Force
+task AssertPSResGen {
+    # Download the ResGen tool used by PowerShell core internally. This will need to be replaced
+    # when the dotnet cli gains support for it.
+    # The SHA in the uri's are for the 6.0.2 release commit.
+    if (-not (Test-Path $PSScriptRoot/tools/ResGen)) {
+        New-Item -ItemType Directory $PSScriptRoot/tools/ResGen | Out-Null
+    }
+
+    if (-not (Test-Path $PSScriptRoot/tools/ResGen/Program.cs)) {
+        $programUri = 'https://raw.githubusercontent.com/PowerShell/PowerShell/36b71ba39e36be3b86854b3551ef9f8e2a1de5cc/src/ResGen/Program.cs'
+        Invoke-WebRequest $programUri -OutFile $PSScriptRoot/tools/ResGen/Program.cs -ErrorAction Stop
+    }
+
+    if (-not (Test-Path $PSScriptRoot/tools/ResGen/ResGen.csproj)) {
+        $projUri = 'https://raw.githubusercontent.com/PowerShell/PowerShell/36b71ba39e36be3b86854b3551ef9f8e2a1de5cc/src/ResGen/ResGen.csproj'
+        Invoke-WebRequest $projUri -OutFile $PSScriptRoot/tools/ResGen/ResGen.csproj -ErrorAction Stop
+    }
 }
 
-task Analyze -If { $script:Settings.ShouldAnalyze } {
-    Invoke-ScriptAnalyzer -Path     $script:Folders.Release `
-                          -Settings $PSScriptRoot\ScriptAnalyzerSettings.psd1 `
-                          -Recurse
+task ResGenImpl {
+    Push-Location $PSScriptRoot/src/ImpliedReflection
+    try {
+        dotnet run --project $PSScriptRoot/tools/ResGen/ResGen.csproj
+    } finally {
+        Pop-Location
+    }
 }
 
-task Test -If { $script:Discovery.HasTests -and $script:Settings.ShouldTest } {
-    $projectRoot = $PSScriptRoot
-    $pesterCC    = "$PSScriptRoot\module\*\*.ps1", "$PSScriptRoot\module\*.psm1"
-    Start-Job {
-        Set-Location $using:projectRoot
+task BuildManaged {
+    $script:dotnet = $dotnet = & $PSScriptRoot\tools\GetDotNet.ps1 -Unix:$Discovery.IsUnix
 
-        Invoke-Pester -CodeCoverage $using:pesterCC -PesterOption @{ IncludeVSCodeMarker = $true }
-    } | Receive-Job -Wait -AutoRemoveJob
+    & $dotnet publish --framework netstandard2.0 --configuration $Configuration --verbosity q -nologo
+}
+
+task CopyToRelease {
+    $releaseFolder = $Folders.Release
+    Copy-Item $PSScriptRoot/module/ImpliedReflection.psd1 -Destination $releaseFolder -Recurse
+    Copy-Item $PSScriptRoot/src/ImpliedReflection/bin/$Configuration/netstandard2.0/publish/ImpliedReflection.* -Destination $releaseFolder
+    Copy-Item $PSScriptRoot/src/ImpliedReflection/bin/$Configuration/netstandard2.0/publish/System.Buffers.dll -Destination $releaseFolder
+}
+
+task Analyze -If { $Settings.ShouldAnalyze } {
+    Invoke-ScriptAnalyzer -Path $Folders.Release -Settings $PSScriptRoot\ScriptAnalyzerSettings.psd1 -Recurse
 }
 
 task DoInstall {
     $installBase = $Home
     if ($profile) { $installBase = $profile | Split-Path }
-    $installPath = '{0}\Modules\{1}\{2}' -f $installBase, $script:Settings.Name, $script:Settings.Version
+    $installPath = '{0}\Modules\{1}\{2}' -f $installBase, $Settings.Name, $Settings.Version
 
     if (-not (Test-Path $installPath)) {
         $null = New-Item $installPath -ItemType Directory
     }
 
-    Copy-Item -Path ('{0}\*' -f $script:Folders.Release) `
-              -Destination $installPath `
-              -Force `
-              -Recurse
+    Copy-Item -Path ('{0}\*' -f $Folders.Release) -Destination $installPath -Force -Recurse
 }
 
 task DoPublish {
@@ -84,16 +107,16 @@ task DoPublish {
     }
 
     $apiKey = (Import-Clixml $env:USERPROFILE\.PSGallery\apikey.xml).GetNetworkCredential().Password
-    Publish-Module -Name $script:Folders.Release -NuGetApiKey $apiKey -Confirm
+    Publish-Module -Name $Folders.Release -NuGetApiKey $apiKey -Confirm
 }
 
-task Build -Jobs Clean, CopyToRelease, BuildDocs
+task ResGen -Jobs AssertPSResGen, ResGenImpl
 
-task PreRelease -Jobs Build, Analyze, Test
+task Build -Jobs Clean, ResGen, BuildManaged, CopyToRelease, BuildDocs
 
-task Install -Jobs PreRelease, DoInstall
+task Install -Jobs Build, DoInstall
 
-task Publish -Jobs PreRelease, DoPublish
+task Publish -Jobs Build, DoPublish
 
 task . Build
 
