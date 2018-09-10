@@ -17,11 +17,13 @@ namespace ImpliedReflection
 
     internal delegate PSProperty PropertyFactory<in TMemberType>(
         object baseObject,
+        Type type,
         TMemberType source)
         where TMemberType : MemberInfo;
 
     internal delegate PSMethod MethodFactory(
         object baseObject,
+        Type type,
         IList<MethodBase> source);
 
 
@@ -56,6 +58,7 @@ namespace ImpliedReflection
                 {
                     ParameterExpression methods = Parameter(typeof(IList<MethodBase>));
                     ParameterExpression baseObj = Parameter(typeof(object));
+                    ParameterExpression type = Parameter(typeof(Type));
                     ParameterExpression methodArray = Variable(typeof(MethodBase[]));
                     ParameterExpression cacheEntry = Variable(Cache.MethodCacheEntry);
                     ParameterExpression isSpecial = Variable(typeof(bool));
@@ -71,11 +74,11 @@ namespace ImpliedReflection
                             //      MethodCacheEntry cacheEntry = NewMethodCache(methodArray); // inlined
                             Assign(cacheEntry, NewMethodCache(methodArray)),
                             // Creates an expression like:
-                            //      AddToCache<PSMethodInfo>(firstMethod, baseObj.GetType(), cacheEntry, false);
+                            //      AddToCache<PSMethodInfo>(GetMemberName(firstMethod), type, cacheEntry, false);
                             Invoke(
                                 AddToCache<PSMethodInfo>(),
                                 GetMemberName(firstMethod),
-                                GetRuntimeType(baseObj),
+                                type,
                                 cacheEntry,
                                 Expr.False),
                             // Creates an expression like:
@@ -111,7 +114,7 @@ namespace ImpliedReflection
                                 cacheEntry,
                                 isSpecial,
                                 isSpecial)),
-                        new[] { baseObj, methods });
+                        new[] { baseObj, type, methods });
                 }
             }
 
@@ -158,6 +161,7 @@ namespace ImpliedReflection
                 {
                     ParameterExpression property = Parameter(typeof(TMemberType));
                     ParameterExpression baseObj = Parameter(typeof(object));
+                    ParameterExpression type = Parameter(typeof(Type));
                     ParameterExpression cacheEntry = Variable(Cache.PropertyCacheEntry);
                     LabelTarget returnLabel = Label(typeof(PSProperty));
 
@@ -182,13 +186,13 @@ namespace ImpliedReflection
                             // Creates an expression like:
                             //      AddToCache<PSPropertyInfo>(
                             //          property.Name,
-                            //          baseObj.GetType(),
+                            //          type,
                             //          cacheEntry,
                             //          false);
                             Invoke(
                                 AddToCache<PSPropertyInfo>(),
                                 Property(property, nameof(MemberInfo.Name)),
-                                GetRuntimeType(baseObj),
+                                type,
                                 cacheEntry,
                                 Expr.False),
                             // Creates an expression like:
@@ -203,7 +207,7 @@ namespace ImpliedReflection
                                 Expression.Field(null, Cache.PSObject_dotNetInstanceAdapter),
                                 baseObj,
                                 cacheEntry)),
-                        new[] { baseObj, property });
+                        new[] { baseObj, type, property });
                 }
             }
         }

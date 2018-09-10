@@ -2,7 +2,7 @@ namespace ImpliedReflection
 {
     internal class StringLiterals
     {
-        internal const string ProxyCtorName = "ctor";
+        internal const string ProxyCtorName = "_ctor";
 
         internal const string ReflectionCtorName = ".ctor";
 
@@ -44,7 +44,18 @@ namespace ImpliedReflection
                     # Ensure the ImpliedReflection delegate has been called and
                     # all members are populated. This is done because the formatter
                     # does not appear to grab CLR members like expected otherwise.
-                    $null = $PSItem.psobject.Members[0]
+                    if ($null -ne $PSItem) {
+                        $null = $PSItem.psobject.Members[0]
+                    }
+                } catch {
+                    if ($PSItem -is [Exception]) {
+                        $PSCmdlet.WriteDebug($PSItem.ToString())
+                    } else {
+                        $PSCmdlet.WriteDebug($PSItem.Exception.ToString())
+                    }
+                }
+
+                try {
                     $steppablePipeline.Process($PSItem)
                 } catch {
                     throw

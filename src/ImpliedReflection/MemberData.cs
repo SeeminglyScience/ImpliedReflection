@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace ImpliedReflection
 {
@@ -23,6 +24,10 @@ namespace ImpliedReflection
         private static readonly Dictionary<Type, MemberData> s_staticMemberCache = new Dictionary<Type, MemberData>();
 
         private static readonly Dictionary<Type, MemberData> s_instanceMemberCache = new Dictionary<Type, MemberData>();
+
+        private static readonly Dictionary<DelegateTypes, Type> s_delegateTypeCache = new Dictionary<DelegateTypes, Type>();
+
+        private static int s_generatedDelegateCount;
 
         private static readonly MemberData s_empty = new MemberData(
             Array.Empty<MemberInfo>(),
@@ -193,7 +198,12 @@ namespace ImpliedReflection
             try
             {
                 TypeBuilder typeBuilder = ModuleBuilder.DefineType(
-                    $"{originalMethods[0].DeclaringType.FullName}{PrivateConstructorProxyTypeSuffix}",
+                    string.Format(
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        "{0}{1}_{2}",
+                        originalMethods[0].ReflectedType.FullName,
+                        PrivateConstructorProxyTypeSuffix,
+                        originalMethods[0].ReflectedType.GetTypeInfo().GetHashCode().ToString("x")),
                     TypeAttributes.NotPublic | TypeAttributes.Abstract,
                     typeof(object));
 
@@ -261,8 +271,8 @@ namespace ImpliedReflection
 
             // If the method tries to return a non-public class it will throw a access
             // violation exception.
-            Type returnType = constructor.DeclaringType.IsPublic
-                ? constructor.DeclaringType
+            Type returnType = constructor.ReflectedType.IsPublic
+                ? constructor.ReflectedType
                 : typeof(object);
 
             delegateTypeArguments[delegateTypeArguments.Length - 1] = returnType;
@@ -276,7 +286,7 @@ namespace ImpliedReflection
 
             proxyMethod.SetImplementationFlags(MethodImplAttributes.IL | MethodImplAttributes.NoInlining);
 
-            Type delegateType = Expression.GetFuncType(delegateTypeArguments);
+            Type delegateType = GetOrCreateDelegateType(parameterTypes, delegateTypeArguments);
             field = typeBuilder.DefineField(
                 string.Format(
                     "{0}_{1}",
@@ -322,12 +332,79 @@ namespace ImpliedReflection
             dynamicMethodIl.Emit(OpCodes.Newobj, constructor);
             if (returnType == typeof(object) && constructor.ReflectedType.IsValueType)
             {
-                dynamicMethodIl.Emit(OpCodes.Box);
+                dynamicMethodIl.Emit(OpCodes.Box, constructor.ReflectedType);
             }
 
             dynamicMethodIl.Emit(OpCodes.Ret);
-            il.Emit(OpCodes.Call, delegateType.GetMethod(nameof(Action.Invoke)));
+            il.Emit(OpCodes.Callvirt, delegateType.GetMethod(nameof(Action.Invoke)));
             il.Emit(OpCodes.Ret);
+        }
+
+        private static Type GetOrCreateDelegateType(Type[] parameterTypes, Type[] delegateTypeArguments)
+        {
+            var delegateSignature = new DelegateTypes(delegateTypeArguments);
+            Type delegateType;
+            lock (s_delegateTypeCache)
+            {
+                if (s_delegateTypeCache.TryGetValue(delegateSignature, out delegateType))
+                {
+                    return delegateType;
+                }
+
+                if (!ContainsInvalidGenericArgument(delegateTypeArguments))
+                {
+                    delegateType = Expression.GetFuncType(delegateTypeArguments);
+                    s_delegateTypeCache.Add(delegateSignature, delegateType);
+                    return delegateType;
+                }
+
+                int id = Interlocked.Increment(ref s_generatedDelegateCount);
+                TypeBuilder typeBuilder = ModuleBuilder.DefineType(
+                    $"generatedDelegate_<{id}>",
+                    TypeAttributes.Public | TypeAttributes.Sealed,
+                    typeof(MulticastDelegate));
+
+                MethodBuilder invoke = typeBuilder.DefineMethod(
+                    nameof(Action.Invoke),
+                    MethodAttributes.Public |
+                        MethodAttributes.HideBySig |
+                        MethodAttributes.NewSlot |
+                        MethodAttributes.Virtual,
+                    delegateTypeArguments[delegateTypeArguments.Length - 1],
+                    parameterTypes);
+
+                invoke.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
+
+                ConstructorBuilder constructor = typeBuilder.DefineConstructor(
+                    MethodAttributes.Public | MethodAttributes.RTSpecialName | MethodAttributes.HideBySig,
+                    CallingConventions.Standard,
+                    new[] { typeof(object), typeof(IntPtr) });
+
+                constructor.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
+
+                delegateType = typeBuilder.CreateTypeInfo().AsType();
+                s_delegateTypeCache.Add(delegateSignature, delegateType);
+                return delegateType;
+            }
+        }
+
+        private static bool ContainsInvalidGenericArgument(Type[] arguments)
+        {
+            foreach (Type typeArgument in arguments)
+            {
+                if (typeArgument.IsPointer | typeArgument.IsByRef)
+                {
+                    return true;
+                }
+
+                if (Cache.IsByRefLikeAttribute != null &&
+                    typeArgument.IsDefined(Cache.IsByRefLikeAttribute, inherit: false))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static CustomAttributeBuilder ToBuilder(CustomAttributeData attribute)
@@ -368,6 +445,16 @@ namespace ImpliedReflection
                 propertyValues.ToArray(),
                 fields.ToArray(),
                 fieldValues.ToArray());
+        }
+
+        private readonly struct DelegateTypes
+        {
+            private readonly int GenericArgumentsHash;
+
+            internal DelegateTypes(Type[] genericTypeArguments)
+            {
+                GenericArgumentsHash = genericTypeArguments.SequenceGetHashCode();
+            }
         }
     }
 }

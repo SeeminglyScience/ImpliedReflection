@@ -39,7 +39,8 @@ namespace ImpliedReflection
         {
             lock (s_syncObject)
             {
-                if (!s_boundRunspaces.Contains(Runspace.DefaultRunspace))
+                Runspace currentRunspace = Runspace.DefaultRunspace;
+                if (!s_boundRunspaces.Contains(currentRunspace))
                 {
                     if (s_boundRunspaces.Count == 0)
                     {
@@ -50,6 +51,10 @@ namespace ImpliedReflection
                     {
                         s_boundRunspaces.Clear();
                     }
+                }
+                else
+                {
+                    s_boundRunspaces.Remove(currentRunspace);
                 }
 
                 if (!s_areDelegatesOverriden)

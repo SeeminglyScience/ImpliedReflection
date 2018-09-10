@@ -60,6 +60,8 @@ namespace ImpliedReflection
 
         public static Type DotNetAdapter;
 
+        public static FieldInfo DotNetAdapter_s_disallowReflectionCache;
+
         public static FieldInfo DotNetAdapter_instancePropertyCacheTable;
 
         public static FieldInfo DotNetAdapter_staticPropertyCacheTable;
@@ -84,7 +86,8 @@ namespace ImpliedReflection
 
         public static FieldInfo MethodInformation_method;
 
-        public static Type RuntimeType = typeof(Type).Assembly.GetType("System.RuntimeType");
+        public static Type IsByRefLikeAttribute = typeof(object).Assembly.GetType(
+            "System.Runtime.CompilerServices.IsByRefLikeAttribute");
 
         static Cache()
         {
@@ -153,6 +156,10 @@ namespace ImpliedReflection
             CollectionEntry = typeof(PSObject).Assembly.GetType(PrivateMemberNames.CollectionEntry);
 
             DotNetAdapter = typeof(PSObject).Assembly.GetType(PrivateMemberNames.DotNetAdapter);
+
+            DotNetAdapter_s_disallowReflectionCache = DotNetAdapter.GetField(
+                "s_disallowReflectionCache",
+                Bind.NonPublic.Static);
 
             DotNetAdapter_instancePropertyCacheTable =
                 DotNetAdapter.GetField(
