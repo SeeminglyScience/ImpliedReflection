@@ -135,26 +135,32 @@ namespace ImpliedReflection
                     return New(Cache.PropertyCacheEntry_ctor_PropertyInfo, property);
                 }
 
+                private static Expression IsWriteOnly(Expression property)
+                {
+                    if (typeof(TMemberType) == typeof(FieldInfo))
+                    {
+                        return Expr.False;
+                    }
+
+                    // Creates an expression similar to:
+                    //      property.GetGetMethod(nonPublic: true) == null;
+                    return IsNull(Call(property, Cache.PropertyInfo_GetGetMethod, Expr.True));
+                }
+
                 private static Expression IsReadOnly(Expression property)
                 {
                     if (typeof(TMemberType) == typeof(FieldInfo))
                     {
-                        // Creates an expression like:
+                        // Creates an expression similar to:
                         //      property.IsInitOnly || property.IsLiteral;
                         return OrElse(
                             Property(property, nameof(FieldInfo.IsInitOnly)),
                             Property(property, nameof(FieldInfo.IsLiteral)));
                     }
 
-                    // Creates an expression like:
+                    // Creates an expression similar to:
                     //      property.GetSetMethod(nonPublic: true) == null;
-                    return Equal(
-                        Call(
-                            property,
-                            nameof(PropertyInfo.GetSetMethod),
-                            Type.EmptyTypes,
-                            Expr.True),
-                        Expr.ObjectNull);
+                    return IsNull(Call(property, Cache.PropertyInfo_GetSetMethod, Expr.True));
                 }
 
                 private static Expression<PropertyFactory<TMemberType>> CreateFactory()
@@ -174,10 +180,10 @@ namespace ImpliedReflection
                                 cacheEntry,
                                 NewPropertyCache(property, Expr.False)),
                             // Creates an expression like:
-                            //      cacheEntry.writeOnly = false;
+                            //      cacheEntry.writeOnly = IsWriteOnly(property);
                             Assign(
                                 Field(cacheEntry, Cache.PropertyCacheEntry_writeOnly),
-                                Expr.False),
+                                IsWriteOnly(property)),
                             // Creates an expression like:
                             //      cacheEntry.ReadOnly = IsReadOnly(property);
                             Assign(
@@ -248,6 +254,11 @@ namespace ImpliedReflection
                     IfThen(
                         Equal(enumerator, Expr.Null<IEnumerator<T>>()),
                         Call(enumerator, typeof(IDisposable).GetMethod(nameof(IDisposable.Dispose))))));
+        }
+
+        internal static Expression IsNull(Expression test)
+        {
+            return Equal(test, ObjectNull);
         }
 
         internal static BlockExpression ForEach(Type type, Expression collection, ForEachBodyCreator body)

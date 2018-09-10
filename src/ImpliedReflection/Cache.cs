@@ -8,6 +8,22 @@ namespace ImpliedReflection
 {
     internal static class Cache
     {
+        public static MethodInfo PropertyInfo_GetGetMethod = typeof(PropertyInfo)
+            .GetMethod(
+                nameof(PropertyInfo.GetGetMethod),
+                Bind.Public.Instance,
+                null,
+                new[] { typeof(bool) },
+                null);
+
+        public static MethodInfo PropertyInfo_GetSetMethod = typeof(PropertyInfo)
+            .GetMethod(
+                nameof(PropertyInfo.GetSetMethod),
+                Bind.Public.Instance,
+                null,
+                new[] { typeof(bool) },
+                null);
+
         public static ConstructorInfo GeneratedProxyHelpersAttribute_ctor = typeof(Internal.GeneratedProxyHelpersAttribute)
             .GetConstructor(
                 Bind.Public.Instance,
