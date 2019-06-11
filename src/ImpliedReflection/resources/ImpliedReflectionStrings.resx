@@ -134,4 +134,7 @@ This can have unintended consequences, are you sure you want to continue?</value
   <data name="ConfirmTitle" xml:space="preserve">
     <value>Confirm</value>
   </data>
+  <data name="UnknownPowerShellVersion" xml:space="preserve">
+    <value>Unable to determine the current PowerShell version. If this is a custom build of PowerShell, please file a GitHub issue for guidance.</value>
+  </data>
 </root>

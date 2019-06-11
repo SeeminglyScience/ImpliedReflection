@@ -16,6 +16,18 @@ namespace ImpliedReflection.Commands
 
         protected override void EndProcessing()
         {
+            if (PSVersionInfo.PSVersion == PSVersionInfo.Empty)
+            {
+                ThrowTerminatingError(
+                    new ErrorRecord(
+                        new PSInvalidOperationException(ImpliedReflectionStrings.UnknownPowerShellVersion),
+                        nameof(ImpliedReflectionStrings.UnknownPowerShellVersion),
+                        ErrorCategory.InvalidOperation,
+                        targetObject: null));
+
+                return;
+            }
+
             if (!(Force.IsPresent || ShouldContinue()))
             {
                 return;
