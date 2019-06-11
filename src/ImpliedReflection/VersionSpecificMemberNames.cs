@@ -1,6 +1,4 @@
-﻿using System.Management.Automation;
-
-namespace ImpliedReflection
+﻿namespace ImpliedReflection
 {
     internal abstract class VersionSpecificMemberNames
     {
@@ -8,14 +6,22 @@ namespace ImpliedReflection
 
         static VersionSpecificMemberNames()
         {
-            var coreNames = new CoreCLRNames();
-            if (typeof(PSObject).GetField(coreNames.PSObject_memberCollection, Bind.NonPublic.Static) != null)
+            PrivateMemberNames = CreateInstance();
+        }
+
+        private static VersionSpecificMemberNames CreateInstance()
+        {
+            if (PSVersionInfo.PSVersion.Major >= 7)
             {
-                PrivateMemberNames = coreNames;
-                return;
+                return new Core7CLRNames();
             }
 
-            PrivateMemberNames = new FullCLRNames();
+            if (PSVersionInfo.PSVersion.Major == 6)
+            {
+                return new CoreCLRNames();
+            }
+
+            return new FullCLRNames();
         }
 
         /// <summary>
