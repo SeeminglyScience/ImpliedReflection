@@ -12,7 +12,7 @@
 RootModule = 'ImpliedReflection.dll'
 
 # Version number of this module.
-ModuleVersion = '0.2.0'
+ModuleVersion = '0.2.1'
 
 # ID used to uniquely identify this module
 GUID = '8834a5bf-9bf2-4f09-8415-3c1e561109f6'
@@ -75,7 +75,11 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = ' - Objects no longer need to be outputted before private members are available
+        ReleaseNotes = '# v0.2.1
+ - Update for PowerShell Core 7.0.0-preview.1
+ - Fix Add-PrivateMember adding members that tracked the wrong instance
+# v0.2.0
+ - Objects no longer need to be outputted before private members are available
  - Enable invocation of private constructors via new "ctor" static proxy method
  - Improve performance by using dynamically compiled delegates for reflection calls
  - Full rewrite as binary module'
