@@ -8,6 +8,13 @@ namespace ImpliedReflection
 {
     internal static class Cache
     {
+        public static ConstructorInfo RuntimeException_ctor = typeof(RuntimeException).
+            GetConstructor(
+                Bind.Public.Instance,
+                binder: null,
+                new[] { typeof(string) },
+                modifiers: null);
+
         public static MethodInfo PropertyInfo_GetGetMethod = typeof(PropertyInfo)
             .GetMethod(
                 nameof(PropertyInfo.GetGetMethod),
