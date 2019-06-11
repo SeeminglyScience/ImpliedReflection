@@ -48,15 +48,17 @@ namespace ImpliedReflection.Commands
 
             foreach (PSMemberInfo member in memberTable.Members)
             {
-                InputObject.Members.Add(member, preValidated: true);
-                if (member is PSPropertyInfo property)
+                PSMemberInfo clonedMember = member.Clone();
+                clonedMember.ReplicateInstance(InputObject.BaseObject);
+                InputObject.Members.Add(clonedMember, preValidated: true);
+                if (clonedMember is PSPropertyInfo property)
                 {
-                    InputObject.Properties.Add(property, preValidated: true);
+                    InputObject.Properties.Add(property.Clone(), preValidated: true);
                 }
 
-                if (member is PSMethodInfo method)
+                if (clonedMember is PSMethodInfo method)
                 {
-                    InputObject.Methods.Add(method, preValidated: true);
+                    InputObject.Methods.Add(method.Clone(), preValidated: true);
                 }
             }
 

@@ -178,5 +178,10 @@
         /// Gets a string similar to "CollectionNameForTracing".
         /// </summary>
         public virtual string CollectionEntry_CollectionNameForTracing => "CollectionNameForTracing";
+
+        /// <summary>
+        /// Gets a string similar to "ReplicateInstance".
+        /// </summary>
+        public virtual string PSMemberInfo_ReplicateInstance => "ReplicateInstance";
     }
 }
