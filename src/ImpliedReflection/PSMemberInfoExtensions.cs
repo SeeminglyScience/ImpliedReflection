@@ -6,9 +6,7 @@ namespace ImpliedReflection
 {
     internal static class PSMemberInfoExtensions
     {
-        private static readonly Action<PSMemberInfo, object> s_replicateInstance;
-
-        public static readonly CallSite<Action<CallSite, PSMemberInfo, object>> s_callsite
+        private static readonly CallSite<Action<CallSite, PSMemberInfo, object>> s_callsite
             = CallSite<Action<CallSite, PSMemberInfo, object>>.Create(ReplicateInstanceBinder.Instance);
 
         public static TMemberInfo Clone<TMemberInfo>(this TMemberInfo member)
