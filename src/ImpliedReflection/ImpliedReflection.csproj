@@ -1,15 +1,68 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>7.2</LangVersion>
+    <TargetFrameworks Condition=" '$(ExtraFrameworks)' != '' ">$(TargetFrameworks);$(ExtraFrameworks)</TargetFrameworks>
+    <TargetFrameworks>net471;net6</TargetFrameworks>
+    <!-- <TargetFrameworks>net6;net471</TargetFrameworks> -->
+    <InternalsAssemblyNames>System.Management.Automation</InternalsAssemblyNames>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants Condition=" '$(ExtraConstants)' != '' ">$(DefineConstants);$(ExtraConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6' ">
+    <DefineConstants>$(DefineConstants);PS7</DefineConstants>
+    <SMAVersion>7.2.0</SMAVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net471' ">
+    <DefineConstants>$(DefineConstants);PS5_1</DefineConstants>
+    <SMAVersion>5.1</SMAVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="PowerShellStandard.Library" Version="5.1.0-preview-06" PrivateAssets="all" />
-    <PackageReference Include="System.Buffers" Version="4.4.0" />
-    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" PrivateAssets="all" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" PrivateAssets="all" />
+    <ProjectReference Include="../IgnoresAccessChecksToGenerator/IgnoresAccessChecksToGenerator.Tasks/IgnoresAccessChecksToGenerator.Tasks.csproj" PrivateAssets="all" />
+    <Reference Include="../../lib/System.Management.Automation/$(SMAVersion)/System.Management.Automation.dll" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <Compile Include="Commands/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(SMAVersion)' == '5.1'">
+    <Compile Include="PowerShell.5/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(SMAVersion)' != '5.1'">
+    <Compile Include="PowerShell.7/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net471' ">
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <StronglyTypedFileName>$(IntermediateOutputPath)\Strings.Designer.cs</StronglyTypedFileName>
+      <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
+      <StronglyTypedNamespace>ImpliedReflection</StronglyTypedNamespace>
+      <StronglyTypedClassName>Strings</StronglyTypedClassName>
+    </EmbeddedResource>
+    <Compile Include="$(IntermediateOutputPath)Strings.Designer.cs" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Lib.Harmony" Version="2.2.0" />
+  </ItemGroup>
+
+
+  <Import Project="../IgnoresAccessChecksToGenerator/Build/IgnoresAccessChecksToGenerator.targets" />
 </Project>

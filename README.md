@@ -1,39 +1,29 @@
-# ImpliedReflection
+<h1 align="center">ImpliedReflection</h1>
 
-ImpliedReflection is a PowerShell module for exploring non-public properties and methods of objects as if they were public.
+<p align="center">
+    <sub>
+      Access non-public types and type members as if they were public.
+    </sub>
+    <br /><br />
+    <a title="Commits" href="https://github.com/SeeminglyScience/ImpliedReflection/commits/master">
+        <img alt="Build Status" src="https://github.com/SeeminglyScience/ImpliedReflection/workflows/build/badge.svg" />
+    </a>
+    <a title="ImpliedReflection on PowerShell Gallery" href="https://www.powershellgallery.com/packages/ImpliedReflection">
+        <img alt="PowerShell Gallery Version (including pre-releases)" src="https://img.shields.io/powershellgallery/v/ImpliedReflection?include_prereleases&label=gallery">
+    </a>
+    <a title="LICENSE" href="https://github.com/SeeminglyScience/ImpliedReflection/blob/master/LICENSE">
+         <img alt="GitHub" src="https://img.shields.io/github/license/SeeminglyScience/ImpliedReflection">
+    </a>
+</p>
 
-This project adheres to the Contributor Covenant [code of conduct](https://github.com/SeeminglyScience/ImpliedReflection/tree/master/docs/CODE_OF_CONDUCT.md).
-By participating, you are expected to uphold this code. Please report unacceptable behavior to seeminglyscience@gmail.com.
+
+**IMPORTANT:** This project operates entirely on an absurd amount of implementation detail. This is not a supported product, may break at any time, and should not be used in production environments. This is meant to be used only for exploration and/or interactive troubleshooting.
 
 ## Features
 
-- All members are bound to the object the **same way public members are** by the PowerShell engine.
-- Supports any parameter types (including ByRef, Pointer, etc) that the PowerShell engine can handle.
-- Member binding is done automatically by hooking into the PowerShell engine's binder.
-
-## Known Issues
-
-- Non-public static members will only be available once either:
-    1. A `System.Type` object representing the type has been outputted
-    1. An instance of the type has been outputted
-  There's only an instance delegate in the engine, so static still depends on `Out-Default`
-
-- Non-public constructors are available via an added `_ctor` static method
-
-- Family (aka `protected`) properties will throw an exception stating that the property is
-  write only.  This is due to explicit checks for family properties in the PowerShell's binder. You can
-  get around it by calling the getter method instead (e.g. instead of `$Host.Runspace.RunningPipelines` try `$Host.Runpsace.get_RunningPipelines()`)
-
-## Documentation
-
-Check out our **[documentation](https://github.com/SeeminglyScience/ImpliedReflection/tree/master/docs/en-US/ImpliedReflection.md)** for information about how to use this project.
-
-## Demos
-
-![new-member-binding](https://user-images.githubusercontent.com/24977523/45323875-79ada380-b51a-11e8-95d0-15e605b5eb4a.gif)
-
-![implied-reflection-demo](https://user-images.githubusercontent.com/24977523/28750154-28fda216-74af-11e7-8629-8ada279e860e.gif)
-
+- Access any type, field, property, method, constructor, or event regardless of accessibility
+- Binding and resolution is done no differently from public types and type members
+- Member binding is done automatically by hooking directly into various parts of the PowerShell engine
 
 ## Installation
 
@@ -50,13 +40,58 @@ git clone 'https://github.com/SeeminglyScience/ImpliedReflection.git'
 Set-Location .\ImpliedReflection
 Invoke-Build -Task Install
 ```
-
 ## Usage
+
+
+```powershell
+using namespace System.Management.Automation
+
+Enable-ImpliedReflection -YesIKnowIShouldNotDoThis
+
+$sbd = [CompiledScriptBlockData]::new(
+    '"hi!"',
+    $false)
+
+$sb = [scriptblock]::new($sbd)
+$optimized = $true
+$action = $sb.GetCodeToInvoke([ref] $optimized, [ScriptBlockClauseToInvoke]::End)
+
+$scope = $null
+try {
+    $locals = $sb.MakeLocalsTuple($true)
+    $scope = $ExecutionContext._context.EngineSessionState.NewScope($false)
+    $scope.LocalsTuple = $locals
+    $locals.SetAutomaticVariable(
+        [AutomaticVariable]::MyInvocation,
+        $MyInvocation,
+        $ExecutionContext._context)
+
+    $context = [Language.FunctionContext]@{
+        _executionContext = $ExecutionContext._context
+        _outputPipe = $ExecutionContext._context.CurrentCommandProcessor.CommandRuntime.OutputPipe
+        _localsTuple = $scope.LocalsTuple
+        _scriptBlock = $sb
+        _file = $null
+        _debuggerHidden = $false
+        _debuggerStepThrough = $false
+        _sequencePoints = $sbd.SequencePoints
+    }
+
+    $Host.Runspace.Debugger.EnterScriptFunction($context)
+    $action.Invoke($context)
+} finally {
+    if ($null -ne $scope) {
+        $ExecutionContext._context.EngineSessionState.RemoveScope($scope)
+    }
+}
+```
+
+Goes the long way around to invoke a scriptblock of `"hi!"`. There's no point to do this, but it shows off all the different things that work with ImpliedReflection.
 
 ### Explore properties and fields
 
 ```powershell
-Enable-ImpliedReflection -Force
+Enable-ImpliedReflection -YesIKnowIShouldNotDoThis
 $ExecutionContext._context.HelpSystem
 <#
 ExecutionContext      : System.Management.Automation.ExecutionContext
@@ -103,9 +138,6 @@ $scriptblock.InvokeUsingCmdlet($PSCmdlet, $true, 'SwallowErrors', $_, $input, $t
 ### Explore static members
 
 ```powershell
-# For static binding either the type (like below) or an instance of the type needs to hit
-# Out-Default first.
-[scriptblock]
 [scriptblock]::delegateTable
 <#
 Keys      : { $args[0].Name }
@@ -122,12 +154,10 @@ _freeList : 3
 _lock     : System.Object
 _invalid  : False
 #>
-[ref].Assembly.GetType('System.Management.Automation.Utils')
-[ref].Assembly.GetType('System.Management.Automation.Utils')::IsAdministrator()
+[System.Management.Automation.Utils]::IsAdministrator()
 <#
 False
 #>
-[psmoduleinfo]
 [psmoduleinfo] | Get-Member -Static
 <#
    TypeName: System.Management.Automation.PSModuleInfo
@@ -158,3 +188,7 @@ _builtinVariables                             Property   static string[] _builti
 
 We would love to incorporate community contributions into this project.  If you would like to
 contribute code, documentation, tests, or bug reports, please read our [Contribution Guide](https://github.com/SeeminglyScience/ImpliedReflection/tree/master/docs/CONTRIBUTING.md) to learn more.
+
+## Special Thanks
+
+- [aelij/IgnoresAccessChecksToGenerator](https://github.com/aelij/IgnoresAccessChecksToGenerator) - A modified (to handle different outputs based on target framework) copy of their source is included in this project

@@ -1,0 +1,22 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <_IACTG_TFM Condition="'$(MSBuildRuntimeType)' == 'Core'">netstandard2.0</_IACTG_TFM>
+    <_IACTG_TFM Condition="'$(MSBuildRuntimeType)' != 'Core'">net46</_IACTG_TFM>
+    <_IACTG_TaskAssembly>$(MSBuildThisFileDirectory)..\IgnoresAccessChecksToGenerator.Tasks\bin\Debug\$(_IACTG_TFM)\publish\IgnoresAccessChecksToGenerator.Tasks.dll</_IACTG_TaskAssembly>
+  </PropertyGroup>
+  
+  <UsingTask AssemblyFile="$(_IACTG_TaskAssembly)" TaskName="IgnoresAccessChecksToGenerator.Tasks.PublicizeInternals" />
+
+  <Target Name="IgnoresAccessChecksToGenerator" AfterTargets="AfterResolveReferences">
+    <PublicizeInternals SourceReferences="@(ReferencePath)" AssemblyNames="$(InternalsAssemblyNames)" ExcludeTypeNames="$(InternalsAssemblyExcludeTypeNames)" TargetFramework="$(TargetFramework)">
+      <Output ItemName="ReferencePath" TaskParameter="TargetReferences" />
+      <Output ItemName="_IACTG_RemovedReferences" TaskParameter="RemovedReferences" />
+      <Output ItemName="Compile" TaskParameter="GeneratedCodeFiles" />
+    </PublicizeInternals>
+    <ItemGroup>
+      <ReferencePath Remove="@(_IACTG_RemovedReferences)" />
+    </ItemGroup>
+  </Target>
+
+</Project>

@@ -8,7 +8,7 @@ schema: 2.0.0
 
 ## SYNOPSIS
 
-Enable the binding of non public members to all objects outputted.
+Enable the binding of non-public members to all objects outputted.
 
 ## SYNTAX
 
@@ -18,24 +18,61 @@ Enable-ImpliedReflection [-Force]
 
 ## DESCRIPTION
 
-The Enable-ImpliedReflection function replaces the Out-Default cmdlet with a proxy function that invokes Add-PrivateMember on every object outputted to the console.
+The Enable-ImpliedReflection cmdlet injects hooks into the PowerShell engine to force non-public and unsupported members and types to function as though they were public. This operation is global to the process and is not reversible.
 
 ## EXAMPLES
 
 ### -------------------------- EXAMPLE 1 --------------------------
 
 ```powershell
-Enable-ImpliedReflection -Force
-$ExecutionContext
+using namespace System.Management.Automation
 
-    _context       : System.Management.Automation.ExecutionContext
-    _host          : System.Management.Automation.Internal.Host.InternalHost
-    _invokeCommand : System.Management.Automation.CommandInvocationIntrinsics
-    Host           : System.Management.Automation.Internal.Host.InternalHost
-    Events         : System.Management.Automation.PSLocalEventManager
-    InvokeProvider : System.Management.Automation.ProviderIntrinsics
-    SessionState   : System.Management.Automation.SessionState
-    InvokeCommand  : System.Management.Automation.CommandInvocationIntrinsics
+Enable-ImpliedReflection -YesIKnowIShouldNotDoThis
+
+$sbd = [CompiledScriptBlockData]::new(
+    '"hi!"',
+    $false)
+
+$sb = [scriptblock]::new($sbd)
+$optimized = $true
+$action = $sb.GetCodeToInvoke([ref] $optimized, [ScriptBlockClauseToInvoke]::End)
+
+$scope = $null
+try {
+    $locals = $sb.MakeLocalsTuple($true)
+    $scope = $ExecutionContext._context.EngineSessionState.NewScope($false)
+    $scope.LocalsTuple = $locals
+    $locals.SetAutomaticVariable(
+        [AutomaticVariable]::MyInvocation,
+        $MyInvocation,
+        $ExecutionContext._context)
+
+    $context = [Language.FunctionContext]@{
+        _executionContext = $ExecutionContext._context
+        _outputPipe = $ExecutionContext._context.CurrentCommandProcessor.CommandRuntime.OutputPipe
+        _localsTuple = $scope.LocalsTuple
+        _scriptBlock = $sb
+        _file = $null
+        _debuggerHidden = $false
+        _debuggerStepThrough = $false
+        _sequencePoints = $sbd.SequencePoints
+    }
+
+    $Host.Runspace.Debugger.EnterScriptFunction($context)
+    $action.Invoke($context)
+} finally {
+    if ($null -ne $scope) {
+        $ExecutionContext._context.EngineSessionState.RemoveScope($scope)
+    }
+}
+```
+
+Goes the long way around to invoke a scriptblock of `"hi!"`. There's no point to do this, but it shows off all the different things that work with ImpliedReflection.
+
+### -------------------------- EXAMPLE 2 --------------------------
+
+```powershell
+Enable-ImpliedReflection -YesIKnowIShouldNotDoThis
 
 $ExecutionContext._context
 
@@ -184,9 +221,4 @@ This function does not output to the pipeline.
 
 ## NOTES
 
-This function will not work in scripts as it relys on objects being passed to Out-Default. This is also working as intended, as it's meant to be a tool for exploration and should not be used in scripts.
-
 ## RELATED LINKS
-
-[Add-PrivateMember](Add-PrivateMember.md)
-[Disable-ImpliedReflection](Disable-ImpliedReflection.md)
