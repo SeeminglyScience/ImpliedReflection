@@ -1,3 +1,4 @@
+using System;
 using System.Management.Automation;
 
 using static System.Management.Automation.DotNetAdapter;
