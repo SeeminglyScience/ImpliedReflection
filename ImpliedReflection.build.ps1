@@ -40,7 +40,10 @@ $Discovery = @{
 }
 
 task Init {
-    Remove-Item $Folders.Release -ErrorAction Stop -Force -Recurse
+    if (Test-Path $Folders.Release) {
+        Remove-Item $Folders.Release -ErrorAction Stop -Force -Recurse
+    }
+
     New-Item -ItemType Directory $Folders.Release -ErrorAction Stop | Out-Null
 
     $csproj = Get-Content -Raw $PSScriptRoot/src/ImpliedReflection/ImpliedReflection.csproj
