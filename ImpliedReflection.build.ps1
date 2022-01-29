@@ -81,8 +81,10 @@ task BuildDocs -If { $Discovery.HasDocs } {
 }
 
 task BuildGenerator {
+    & $dotnet publish "$PSScriptRoot/src/IgnoresAccessChecksToGenerator" --framework net46 --configuration Debug --verbosity q -nologo
+    & $dotnet publish "$PSScriptRoot/src/IgnoresAccessChecksToGenerator" --framework netstandard2.0 --configuration Debug --verbosity q -nologo
     & $dotnet publish "$PSScriptRoot/src/IgnoresAccessChecksToGenerator" --framework net46 --configuration Release --verbosity q -nologo
-    & $dotnet publish "$PSScriptRoot/src/IgnoresAccessChecksToGenerator" --framework netstandard2.0 --configuration Release  --verbosity q -nologo
+    & $dotnet publish "$PSScriptRoot/src/IgnoresAccessChecksToGenerator" --framework netstandard2.0 --configuration Release --verbosity q -nologo
 }
 
 task BuildManaged {
