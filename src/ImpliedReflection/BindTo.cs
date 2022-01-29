@@ -2,11 +2,11 @@ using System.Reflection;
 
 namespace ImpliedReflection
 {
-    internal static class Bind
+    internal static class BindTo
     {
         public static BindingFlags IgnoreCase(this BindingFlags flags)
         {
-            if (flags.HasFlag(BindingFlags.IgnoreCase))
+            if ((flags & BindingFlags.IgnoreCase) != 0)
             {
                 return flags;
             }

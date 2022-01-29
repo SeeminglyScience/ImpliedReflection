@@ -9,10 +9,10 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'ImpliedReflection.dll'
+RootModule = 'ImpliedReflection.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.2.1'
+ModuleVersion = '1.0.0'
 
 # ID used to uniquely identify this module
 GUID = '8834a5bf-9bf2-4f09-8415-3c1e561109f6'
@@ -45,7 +45,7 @@ ProcessorArchitecture = 'None'
 FunctionsToExport = @()
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = 'Add-PrivateMember', 'Disable-ImpliedReflection', 'Enable-ImpliedReflection'
+CmdletsToExport = 'Enable-ImpliedReflection'
 
 # Variables to export from this module
 VariablesToExport = @()
@@ -54,8 +54,8 @@ VariablesToExport = @()
 AliasesToExport = @()
 
 # List of all files packaged with this module
-FileList = 'ImpliedReflection.psd1',
-           'ImpliedReflection.dll'
+# FileList = 'ImpliedReflection.psd1',
+#            'ImpliedReflection.dll'
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 PrivateData = @{
@@ -75,20 +75,11 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = '# v0.2.1
- - Update for PowerShell Core 7.0.0-preview.1
- - Fix Add-PrivateMember adding members that tracked the wrong instance
-# v0.2.0
- - Objects no longer need to be outputted before private members are available
- - Enable invocation of private constructors via new "ctor" static proxy method
- - Improve performance by using dynamically compiled delegates for reflection calls
- - Full rewrite as binary module'
+        ReleaseNotes = '# v1.0.0
+ - Now just works after enabling.'
 
     } # End of PSData hashtable
 
 } # End of PrivateData hashtable
 
 }
-
-
-

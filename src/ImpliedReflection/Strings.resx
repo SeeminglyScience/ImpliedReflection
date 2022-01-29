@@ -124,7 +124,7 @@
     <value>Implied reflection is not enabled.</value>
   </data>
   <data name="ConfirmMessage" xml:space="preserve">
-    <value>If you continue, the default output command will be injected with a command that binds non-public members to all objects for the rest of the session.
+    <value>If you continue, hooks will be injected into the engine to force non-public and unsupported members and types to function as though they were public. This operation is global to the process and is not reversible.
 
 This can have unintended consequences, are you sure you want to continue?</value>
   </data>
@@ -139,5 +139,8 @@ This can have unintended consequences, are you sure you want to continue?</value
   </data>
   <data name="InvalidMemberInfo" xml:space="preserve">
     <value>An attempt to clone a PSMemberInfo object failed because no suitable "ReplicateInstance" method was found.</value>
+  </data>
+  <data name="RunspaceStateRequestedWrongThread" xml:space="preserve">
+    <value>There is no Runspace available to run scripts in this thread. You can provide one in the DefaultRunspace property of the System.Management.Automation.Runspaces.Runspace type.</value>
   </data>
 </root>
