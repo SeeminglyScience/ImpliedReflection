@@ -76,6 +76,7 @@ task AssertDotNet {
 }
 
 task BuildDocs -If { $Discovery.HasDocs } {
+    & "$PSScriptRoot\tools\AssertRequiredModule.ps1" platyPS 0.14.0 -Force
     $output = '{0}\{1}' -f $Folders.Release, $PSCulture
     $null = New-ExternalHelp -Path $PSScriptRoot\docs\$PSCulture -OutputPath $output
 }
@@ -83,8 +84,6 @@ task BuildDocs -If { $Discovery.HasDocs } {
 task BuildGenerator {
     & $dotnet publish "$PSScriptRoot/src/IgnoresAccessChecksToGenerator" --framework net46 --configuration Debug --verbosity q -nologo
     & $dotnet publish "$PSScriptRoot/src/IgnoresAccessChecksToGenerator" --framework netstandard2.0 --configuration Debug --verbosity q -nologo
-    & $dotnet publish "$PSScriptRoot/src/IgnoresAccessChecksToGenerator" --framework net46 --configuration Release --verbosity q -nologo
-    & $dotnet publish "$PSScriptRoot/src/IgnoresAccessChecksToGenerator" --framework netstandard2.0 --configuration Release --verbosity q -nologo
 }
 
 task BuildManaged {

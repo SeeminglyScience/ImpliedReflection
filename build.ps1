@@ -3,7 +3,7 @@ param(
     [switch] $Force
 )
 end {
-    & "$PSScriptRoot\tools\AssertRequiredModule.ps1" InvokeBuild 5.8.4 -Force:$Force.IsPresent
+    & "$PSScriptRoot\tools\AssertRequiredModule.ps1" InvokeBuild 5.8.4 -Force
     $invokeBuildSplat = @{
         Task = 'Build'
         File = "$PSScriptRoot/ImpliedReflection.build.ps1"
