@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string] $Version = '2.1.400',
+    [string] $Version = '6.1.100',
 
     [switch] $Unix
 )
