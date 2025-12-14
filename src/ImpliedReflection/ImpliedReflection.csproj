@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFrameworks Condition=" '$(ExtraFrameworks)' != '' ">$(TargetFrameworks);$(ExtraFrameworks)</TargetFrameworks>
-    <TargetFrameworks>net471;net6</TargetFrameworks>
-    <!-- <TargetFrameworks>net6;net471</TargetFrameworks> -->
+    <TargetFrameworks>net471;net8</TargetFrameworks>
+    <!-- <TargetFrameworks>net8;net471</TargetFrameworks> -->
     <InternalsAssemblyNames>System.Management.Automation</InternalsAssemblyNames>
     <LangVersion>latest</LangVersion>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
@@ -14,9 +14,9 @@
     <DefineConstants Condition=" '$(ExtraConstants)' != '' ">$(DefineConstants);$(ExtraConstants)</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8' ">
     <DefineConstants>$(DefineConstants);PS7</DefineConstants>
-    <SMAVersion>7.2.0</SMAVersion>
+    <SMAVersion>7.4.12</SMAVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net471' ">
@@ -43,8 +43,8 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net471' ">
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
-    <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
+    <PackageReference Include="System.Collections.Immutable" Version="9.0.9" />
   </ItemGroup>
 
   <ItemGroup>
@@ -60,7 +60,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lib.Harmony" Version="2.2.0" />
+    <PackageReference Include="Lib.Harmony" Version="2.4.2" />
   </ItemGroup>
 
 
