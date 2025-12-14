@@ -12,7 +12,7 @@
 RootModule = 'ImpliedReflection.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.0'
+ModuleVersion = '1.0.1'
 
 # ID used to uniquely identify this module
 GUID = '8834a5bf-9bf2-4f09-8415-3c1e561109f6'
@@ -75,7 +75,9 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = '# v1.0.0
+        ReleaseNotes = '# v1.0.1
+ - Updated Harmony, should work in up to PowerShell v7.6
+# v1.0.0
  - Now just works after enabling.'
 
     } # End of PSData hashtable

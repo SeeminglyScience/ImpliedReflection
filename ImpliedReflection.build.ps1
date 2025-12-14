@@ -6,7 +6,9 @@ param(
 
     [string[]] $Framework,
 
-    [string[]] $PowerShellVersion = ('5.1', '7.2.0')
+    [string[]] $PowerShellVersion = ('5.1', '7.4.12'),
+
+    [switch] $Force
 )
 
 $moduleName = 'ImpliedReflection'
@@ -174,12 +176,24 @@ task DoInstall {
 }
 
 task DoPublish {
-    if (-not (Test-Path $env:USERPROFILE\.PSGallery\apikey.xml)) {
+    if ($Configuration -eq 'Debug') {
+        throw 'Configuration must not be Debug to publish!'
+    }
+
+    if ($env:GALLERY_API_KEY) {
+        $apiKey = $env:GALLERY_API_KEY
+    } else {
+        $userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+        if (Test-Path $userProfile/.PSGallery/apikey.xml) {
+            $apiKey = (Import-Clixml $userProfile/.PSGallery/apikey.xml).GetNetworkCredential().Password
+        }
+    }
+
+    if (-not $apiKey) {
         throw 'Could not find PSGallery API key!'
     }
 
-    $apiKey = (Import-Clixml $env:USERPROFILE\.PSGallery\apikey.xml).GetNetworkCredential().Password
-    Publish-Module -Name $Folders.Release -NuGetApiKey $apiKey -Confirm
+    Publish-Module -Name $Folders.Release -NuGetApiKey $apiKey -Force:$Force.IsPresent -WhatIf
 }
 
 task AssertSMA {
